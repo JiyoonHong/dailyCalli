@@ -7,7 +7,7 @@ var upload = require('./upload');
 var userLike = require('./userLike');
 var calliLike = require('./calliLike');
 var modify =require('./modify');
-var search = require('./search');
+var tagSearch = require('./tagSearch');
 var deleted = require('./deleted', deleted);
 
 /* GET home page. */
@@ -23,5 +23,5 @@ router.use('/userLike', userLike);
 router.use('/calliLike', calliLike);
 router.use('/modify', modify);
 router.use('/delete', deleted);
-router.use('/search', search);
+router.use('/tagSearch', tagSearch);
 module.exports = router;

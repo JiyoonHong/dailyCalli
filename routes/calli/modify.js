@@ -8,8 +8,17 @@ const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
 aws.config.loadFromPath('./config/aws_config.json');
 const verify = require('../jwt_verify');
-
 const s3 = new aws.S3();
+
+//undefined검사 함수
+function undCheck(str) {
+  if (str === undefined) {
+    return null;
+  } else {
+    return str;
+  }
+}
+
 const upload = multer({
     storage: multerS3({
         s3: s3,
@@ -21,75 +30,76 @@ const upload = multer({
     })
 });
 
-//캘리업로드----------localhost:3000/calli/upload-------------
-router.post('/',upload.array('image',5), (req, res) => {
-  let com=[];
-	let taskArray = [
+//캘리수정----------/calli/modify-------------
+router.post('/', upload.fields([{
+  name: 'image',
+  maxCount: 1
+}, {
+  name: 'drawData',
+  maxCount: 5
+}]), (req, res) => {
+  let taskArray = [
     (callback) => {
-      let verify_data = verify(req.headers.user_token);
+      let verify_data = verify(req.headers.usertoken);
       callback(null, verify_data);
     },
 
-		//1. connection을 pool로부터 가져옴
-		(verify_data, callback) => {
-			pool.getConnection((err, connection) => {
-				if(err){
-					res.status(500).send({
-						msg : "fail"
-					});
-					callback("fail reason : " + err);
-				} else callback(null, verify_data, connection);
-			});
-		},
-		//2. 전체 리스트 출력
-		(verify_data, connection, callback) => {
-      let calli_trace= Number(req.body.calli_trace);
-      let guide_id;
-      let calli_txt;
-      let calli_tag= req.body.calli_tag;
-      let user_id=Number(verify_data.user_id);
-      let image=new Array();
+    //1. connection을 pool로부터 가져옴
+    (verify_data, callback) => {
+      pool.getConnection((err, connection) => {
+        if (err) {
+          res.status(500).send({
+            msg: "fail"
+          });
+          callback("fail reason : " + err);
+        } else callback(null, verify_data, connection);
+      });
+    },
+    //2. 전체 리스트 출력
+    (verify_data, connection, callback) => {
+      let guide_id, calli_txt, image;
+      let calli_trace = req.body.calli_trace;
+      let calli_tag = req.body.calli_tag;
+      let user_id = verify_data.user_id;
+      let calli_title = req.body.calli_title;
+      let calli_id = req.body.calli_id;
+      let drawData = new Array();
 
-      if(req.body.calli_txt === undefined){
-        calli_txt = null;
-      }else{
-         calli_txt =req.body.calli_txt;
-      }
-      if(calli_trace === 1){
-        guide_id = req.body.guide_id;
-      }else{
-        guide_id = null;
+      image = undCheck(req.files.image[0].location);
+      calli_txt = undCheck(req.body.calli_txt);
+      guide_id = undCheck(req.body.guide_id);
+
+      //그림 획별 데이터 저장
+      for (let i = 0; i < req.files.drawData.length; ++i) {
+        drawData[i] = req.files.drawData[i].location;
       }
 
-      for(let i=0; i<req.files.length; ++i){
-        image[i]=req.files[i].location;
-      }
-      let calli_img=  JSON.stringify(image);
-
-			let selectAtdQuery = 'update calli.calli set user_id = ?, calli_tag = ?, calli_txt = ?, calli_trace = ?, guide_id = ?, calli_img = ? where calli_id =?';
-			connection.query(selectAtdQuery,[ user_id, calli_tag, calli_txt, calli_trace, guide_id, calli_img, req.body.calli_id] , (err, data) => {
-				if(err){
-					res.status(500).send({
-						msg : "fail"
-					});
-					connection.release();
-					callback("fail reason: "+ err);
-				} else{
+      //배열을 string으로 변환
+      let drawIn = drawData.toString();
+      let selectAtdQuery = 'update calli.calli set user_id = ?, calli_tag = ?, calli_txt = ?, calli_trace = ?, guide_id = ?, calli_img = ?, calli_drawData = ?, calli_title = ? where calli_id =?';
+      connection.query(selectAtdQuery, [user_id, calli_tag, calli_txt, calli_trace, guide_id, image, drawIn, calli_title, calli_id], (err, data) => {
+        if (err) {
+          res.status(500).send({
+            msg: "fail"
+          });
+          connection.release();
+          callback("fail reason: " + err);
+        } else {
           res.status(200).send({
-						msg:"success",
-					});
+            msg: "success",
+          });
           connection.release();
           callback(null, "successful calli write");
-				}
-			});
+        }
+      });
 
-		}
+    }
 
-	];
-	async.waterfall(taskArray , (err, result)=> {
-		if(err) console.log(err);
-		else console.log(result);
-	});
+  ];
+  async.waterfall(taskArray, (err, result) => {
+    if (err) console.log(err);
+    else console.log(result);
+  });
 });
 
 module.exports = router;
