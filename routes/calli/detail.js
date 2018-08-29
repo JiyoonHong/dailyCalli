@@ -55,7 +55,10 @@ router.get('/:calli_id', (req, res) => {
     },
 
     (verify_data, data, connection, callback) => {
-      connection.query('select * from calli.comment where calli_id=? order by if(com_parent=0, com_id,com_parent), com_seq ', Number(req.params.calli_id), (err, comdata) => {
+      var selectQ = 'select comment.*, users.user_nickname, users.user_img from calli.comment ' +
+        'left outer join calli.users on comment.user_id = users.user_id ' +
+        'where calli_id=? order by if(com_parent=0, com_id,com_parent), com_seq ';
+      connection.query(selectQ, parseInt(req.params.calli_id), (err, comdata) => {
         if (err) {
           res.status(500).send({
             msg: "fail"
@@ -78,6 +81,7 @@ router.get('/:calli_id', (req, res) => {
           let pack = {
             calli_id: data[0].calli_id,
             calli_img: data[0].calli_img,
+            calli_title: data[0].calli_title,
             calli_txt: data[0].calli_txt,
             calli_date: moment(data[0].calli_date).format('YYYY.MM.DD'),
             calli_tag: data[0].calli_tag,
@@ -104,6 +108,9 @@ router.get('/:calli_id', (req, res) => {
               com_id: comdata[i].com_id,
               com_parent: comdata[i].com_parent,
               com_seq: comdata[i].com_seq,
+              user_id: comdata[i].user_id,
+              user_nickname: comdata[i].user_nickname,
+              user_img: comdata[i].user_img,
               com_date: moment(comdata[i].com_date).format('MM/DD HH:mm'),
               com_txt: comdata[i].com_txt,
               recom_check: recom_check,

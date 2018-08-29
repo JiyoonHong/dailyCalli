@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const async = require('async');
 const pool = require('../../config/dbPool');
-const crypto = require('crypto');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
@@ -21,7 +20,7 @@ const upload = multer({
   })
 });
 
-//프로필이미지변경----------localhost:3000/myPage/profileImg-------------
+//프로필이미지변경----------/myPage/profileImg-------------
 router.post('/', upload.single('image'), (req, res) => {
   let com = [];
   let taskArray = [
@@ -41,11 +40,12 @@ router.post('/', upload.single('image'), (req, res) => {
         } else callback(null, verify_data, connection);
       });
     },
-    //2. 전체 리스트 출력
+
+    //2. 프로필사진과 소개글 변경
     (verify_data, connection, callback) => {
-      let image = req.file.location;
-      let selectAtdQuery = 'update calli.users set user_img=? where user_id=?';
-      connection.query(selectAtdQuery, [image, verify_data.user_id], (err, data) => {
+      var image = req.file.location;
+      var selectAtdQuery = 'update calli.users set user_img=?, user_intro=? where user_id=?';
+      connection.query(selectAtdQuery, [image, req.body.user_intro, verify_data.user_id], (err, data) => {
         if (err) {
           res.status(500).send({
             msg: "fail"
@@ -57,7 +57,7 @@ router.post('/', upload.single('image'), (req, res) => {
             msg: "success"
           });
           connection.release();
-          callback(null, "successful imgChange");
+          callback(null, "successful profileChange");
         }
       });
 

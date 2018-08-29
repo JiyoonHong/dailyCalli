@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
   let taskArray = [
     //1. connection을 pool로부터 가져옴
     (callback) => {
-      jwt.verify(req.headers.user_token, key.secret, (err, data) => {
+      jwt.verify(req.headers.usertoken, key.secret, (err, data) => {
         if (err) {
           res.status(500).send({
             msg: "fail"
@@ -37,7 +37,7 @@ router.get('/', (req, res) => {
               var userInfo ={
                 email: data.email,
                 user_id: data.user_id,
-                ser_nickname: data.user_nickname,
+                user_nickname: data.user_nickname,
                 token: token
               }
               res.status(200).send({

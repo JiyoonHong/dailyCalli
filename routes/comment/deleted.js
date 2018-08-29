@@ -2,10 +2,9 @@ const express = require('express');
 const router = express.Router();
 const async = require('async');
 const pool = require('../../config/dbPool');
-const crypto = require('crypto');
 const verify = require('../jwt_verify');
 
-//캘리삭제
+//댓글
 router.delete('/', (req, res) => {
   let taskArray = [
     (callback) => {
@@ -28,8 +27,8 @@ router.delete('/', (req, res) => {
     },
     //게시글 삭제
     (verify_data, connection, callback) => {
-      let selectAtdQuery = 'delete from calli.calli where calli_id = ?';
-      connection.query(selectAtdQuery, [Number(req.body.calli_id)], (err, data) => {
+      let selectAtdQuery = 'delete from calli.comment where com_id = ? or com_parent = ?';
+      connection.query(selectAtdQuery, [parseInt(req.body.com_id), parseInt(req.body.com_id)], (err, data) => {
         if (err) {
           res.status(500).send({
             msg: "fail"

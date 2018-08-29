@@ -5,6 +5,7 @@ var calli = require('./calli/index');
 var myPage = require('./myPage/index');
 var comment = require('./comment/index');
 var tokenCheck = require('./tokenCheck');
+var test = require('./test');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -16,4 +17,5 @@ router.use('/calli', calli);
 router.use('/myPage', myPage);
 router.use('/comment', comment);
 router.use('/tokenCheck', tokenCheck);
+router.use('/test', test);
 module.exports = router;

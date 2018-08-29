@@ -57,11 +57,12 @@ router.post('/', upload.fields([{
         } else callback(null, verify_data, connection);
       });
     },
+
     //2. 전체 리스트 출력
     (verify_data, connection, callback) => {
       let guide_id, calli_txt, image;
       let calli_trace = req.body.calli_trace;
-      let calli_tag = req.body.calli_tag;
+      let calli_tag = req.body.calli_tag.join(' ');
       let user_id = verify_data.user_id;
       let calli_title = req.body.calli_title;
       let drawData = new Array();

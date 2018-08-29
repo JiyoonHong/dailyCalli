@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const async = require('async');
 const pool = require('../../config/dbPool');
-const crypto = require('crypto');
 const verify = require('../jwt_verify');
 
 
@@ -13,6 +12,7 @@ router.get('/', (req, res) => {
       let verify_data = verify(req.headers.usertoken);
       callback(null, verify_data);
     },
+
     //1. connection을 pool로부터 가져옴
     (verify_data, callback) => {
       pool.getConnection((err, connection) => {
@@ -23,11 +23,26 @@ router.get('/', (req, res) => {
           callback("connection err : " + err);
         } else callback(null, verify_data, connection);
       });
-
     },
 
-    //2. 랭킹
+    //2. 배너
     (verify_data, connection, callback) => {
+      let selectAtdQuery = "select * from calli.banner";
+      connection.query(selectAtdQuery, (err, banner) => {
+        if (err) {
+          res.status(500).send({
+            msg: "fail"
+          });
+          connection.release();
+          callback("fail reason: " + err);
+        } else {
+          callback(null, verify_data, connection, banner);
+        }
+      });
+    },
+
+    //3. 랭킹
+    (verify_data, connection, banner, callback) => {
       let selectAtdQuery = "select li.calli_id, cal.calli_img from calli.calliLike as li " +
         "left outer join calli.calli as cal on li.calli_id = cal.calli_id " +
         "where DATE_FORMAT(`like_date`, '%Y%U') =  DATE_FORMAT(now(), '%Y%U') -1  and calli_trace = 0 " +
@@ -40,13 +55,13 @@ router.get('/', (req, res) => {
           connection.release();
           callback("fail reason: " + err);
         } else {
-          callback(null, verify_data, connection, data);
+          callback(null, verify_data, connection, banner, data);
         }
       });
     },
 
-    //3.인기배우기
-    (verify_data, connection, data, callback) => {
+    //4.인기배우기
+    (verify_data, connection, banner, data, callback) => {
       let selectAtdQuery = "select li.calli_id, cal.calli_img from calli.calliLike as li " +
         "left outer join calli.calli as cal on li.calli_id = cal.calli_id " +
         "where DATE_FORMAT(`like_date`, '%Y%U') =  DATE_FORMAT(now(), '%Y%U') -1 and calli_trace = 1 " +
@@ -60,13 +75,13 @@ router.get('/', (req, res) => {
           connection.release();
           callback("fail reason: " + err);
         } else {
-          callback(null, verify_data, connection, data, data2);
+          callback(null, verify_data, connection, banner, data, data2);
         }
       });
     },
 
-    //4.최신
-    (verify_data, connection, data, data2, callback) => {
+    //5.최신
+    (verify_data, connection, banner, data, data2, callback) => {
       let selectAtdQuery = "SELECT calli_id, calli_img FROM calli.calli order by calli_date desc limit 4";
 
       connection.query(selectAtdQuery, (err, data3) => {
@@ -77,13 +92,13 @@ router.get('/', (req, res) => {
           connection.release();
           callback("fail reason: " + err);
         } else {
-          callback(null, verify_data, connection, data, data2, data3);
+          callback(null, verify_data, connection, banner, data, data2, data3);
         }
       });
     },
 
-    //5.추천
-    (verify_data, connection, data, data2, data3, callback) => {
+    //6.추천
+    (verify_data, connection, banner, data, data2, data3, callback) => {
       let selectAtdQuery = "select recal.recom_id, rec.recom_title, cal.calli_id, cal.calli_img from calli.recommend as rec " +
         "left outer join calli.recomCalli AS recal on recal.recom_id = rec.recom_id " +
         "left outer join calli.calli AS cal on recal.calli_id = cal.calli_id where recal.recom_id = 1 limit 4";
@@ -105,6 +120,7 @@ router.get('/', (req, res) => {
           }
           res.status(200).send({
             msg: "success",
+            banner: banner,
             drawTopList: data,
             learnTopList: data2,
             newList: data3,
