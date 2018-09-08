@@ -12,6 +12,7 @@ var deleted = require('./deleted', deleted);
 var calliList = require('./calliList', calliList);
 var traceSearch = require('./traceSearch', traceSearch);
 var drawTopList = require('./drawTopList', drawTopList);
+var bestTrace = require('./bestTrace', bestTrace);
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -30,4 +31,5 @@ router.use('/mainSearch', mainSearch);
 router.use('/calliList', calliList);
 router.use('/traceSearch', traceSearch);
 router.use('/drawTopList', drawTopList);
+router.use('/bestTrace', bestTrace);
 module.exports = router;
